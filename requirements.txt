@@ -1,0 +1,4 @@
+fastapi
+uvicorn[standard]
+llama-cpp-python==0.2.56
+pydantic
