@@ -16,7 +16,7 @@ if (rootElement) {
       fontFamily: 'monospace'
     }}>
       <h1 style={{fontSize: '1.2rem', marginBottom: '1rem'}}>[ REPOSITORY READY ]</h1>
-      <p style={{fontSize: '0.8rem', color: '#666'}}>qwen-cpu-inference backend structure initialized.</p>
+      <p style={{fontSize: '0.8rem', color: '#666'}}>qwen-cpu-inference backend files fixed and initialized.</p>
       <div style={{marginTop: '2rem', textAlign: 'left', opacity: 0.8}}>
         <div style={{color: '#888'}}>$ ls -R</div>
         <div>.</div>
@@ -24,7 +24,7 @@ if (rootElement) {
         <div>├── requirements.txt</div>
         <div>├── README.md</div>
         <div>├── app/</div>
-        <div>│   ├── main.py</div>
+        <div>│   ├── main.py (Fixed Syntax)</div>
         <div>│   ├── model.py</div>
         <div>│   └── schemas.py</div>
         <div>└── models/</div>
