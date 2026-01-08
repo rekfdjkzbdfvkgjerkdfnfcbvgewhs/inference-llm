@@ -1,0 +1,5 @@
+{
+  "name": "Qwen Inference Server Architect",
+  "description": "A high-end developer dashboard for visualizing, understanding, and deploying a FastAPI-based Qwen LLM inference server optimized for GPU environments.",
+  "requestFramePermissions": []
+}
