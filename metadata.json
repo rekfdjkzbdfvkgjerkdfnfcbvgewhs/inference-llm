@@ -1,5 +1,5 @@
 {
-  "name": "Qwen Server Technical Manifest",
-  "description": "A high-density technical manifest and deployment suite for the Qwen Inference Server backend.",
+  "name": "Qwen CPU Inference Architect",
+  "description": "A high-performance technical manifest for Qwen deployment on CPU-only infrastructure using llama.cpp and quantization.",
   "requestFramePermissions": []
 }

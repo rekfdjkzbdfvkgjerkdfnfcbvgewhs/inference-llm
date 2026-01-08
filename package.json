@@ -1,5 +1,5 @@
 {
-  "name": "qwen-server-technical-manifest",
+  "name": "qwen-cpu-inference-architect",
   "private": true,
   "version": "0.0.0",
   "type": "module",

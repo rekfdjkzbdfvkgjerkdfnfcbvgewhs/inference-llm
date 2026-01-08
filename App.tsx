@@ -3,7 +3,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Terminal, 
   FileCode, 
-  Server, 
   Activity, 
   ChevronRight, 
   Copy, 
@@ -14,7 +13,9 @@ import {
   Lock,
   Box,
   CornerDownRight,
-  ExternalLink
+  ExternalLink,
+  ZapOff,
+  Layers
 } from 'lucide-react';
 import { QWEN_FILES } from './constants';
 import { FileNode } from './types';
@@ -40,6 +41,7 @@ const App: React.FC = () => {
         ]
       },
       { name: 'requirements.txt', type: 'file', path: 'requirements.txt', content: QWEN_FILES.requirements_txt },
+      { name: 'render.yaml', type: 'file', path: 'render.yaml', content: QWEN_FILES.render_yaml },
       { name: 'Dockerfile', type: 'file', path: 'Dockerfile', content: QWEN_FILES.dockerfile },
       { name: '.dockerignore', type: 'file', path: '.dockerignore', content: QWEN_FILES.dockerignore },
       { name: 'README.md', type: 'file', path: 'README.md', content: QWEN_FILES.readme_md },
@@ -70,18 +72,18 @@ const App: React.FC = () => {
       {/* Top Status Bar */}
       <div className="h-10 border-b border-[#222] bg-[#0a0a0a] flex items-center justify-between px-4 text-[11px] uppercase tracking-widest font-bold">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-emerald-500">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            System: Operational
-          </div>
           <div className="flex items-center gap-2 text-blue-400">
-            <Activity size={12} />
-            Inference: Ready
+            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            CPU Engine: Active
+          </div>
+          <div className="flex items-center gap-2 text-emerald-500">
+            <Layers size={12} />
+            Quant: Q4_K_M (GGUF)
           </div>
         </div>
         <div className="flex items-center gap-4 text-[#555]">
-          <span>Qwen-1.5-1.8B-Chat</span>
-          <span>CUDA 12.1.1</span>
+          <span>Llama-CPP-Python</span>
+          <span>No-CUDA Mode</span>
         </div>
       </div>
 
@@ -89,7 +91,7 @@ const App: React.FC = () => {
         {/* Navigation Sidebar */}
         <aside className="w-64 border-r border-[#222] bg-[#0a0a0a] flex flex-col">
           <div className="p-4 border-b border-[#222]">
-            <div className="text-[10px] text-[#555] mb-2 font-bold uppercase tracking-tighter">Navigation</div>
+            <div className="text-[10px] text-[#555] mb-2 font-bold uppercase tracking-tighter">Manifest</div>
             <nav className="space-y-1">
               {[
                 { id: 'files', icon: FileCode, label: 'Source Explorer' },
@@ -99,7 +101,7 @@ const App: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveView(item.id as any)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded text-xs transition-colors ${activeView === item.id ? 'bg-[#1a1a1a] text-white' : 'text-[#666] hover:text-[#999]'}`}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded text-xs transition-colors ${activeView === item.id ? 'bg-[#1a1a1a] text-white shadow-inner' : 'text-[#666] hover:text-[#999]'}`}
                 >
                   <item.icon size={14} />
                   {item.label}
@@ -109,17 +111,17 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2">
-            <div className="text-[10px] text-[#555] px-2 mb-2 font-bold uppercase tracking-tighter">Workspace</div>
+            <div className="text-[10px] text-[#555] px-2 mb-2 font-bold uppercase tracking-tighter">Filesystem</div>
             <FileTree node={fileTree} selectedPath={selectedFile} onSelect={setSelectedFile} />
           </div>
 
           <div className="p-4 bg-[#0d0d0d] border-t border-[#222] space-y-3">
             <div className="flex justify-between items-center text-[10px] text-[#444]">
-              <span>VRAM USAGE</span>
-              <span>3.8GB / 8.0GB</span>
+              <span>SYSTEM RAM</span>
+              <span>1.8GB / 4.0GB</span>
             </div>
             <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 w-[48%]" />
+              <div className="h-full bg-emerald-500 w-[45%]" />
             </div>
           </div>
         </aside>
@@ -130,15 +132,15 @@ const App: React.FC = () => {
             <>
               <div className="h-10 border-b border-[#222] flex items-center justify-between px-4 bg-[#0a0a0a]">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#888]">
-                  <Terminal size={14} className="text-emerald-500" />
-                  root@{selectedFile}
+                  <Terminal size={14} className="text-blue-500" />
+                  {selectedFile}
                 </div>
                 <button 
                   onClick={handleCopy}
                   className="flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase rounded border border-[#333] hover:bg-[#111] transition-colors"
                 >
                   {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                  {copied ? 'Copied' : 'Copy Content'}
+                  {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
               <div className="flex-1 overflow-auto p-8 selection:bg-blue-500/30">
@@ -152,44 +154,36 @@ const App: React.FC = () => {
           {activeView === 'api' && (
             <div className="flex-1 overflow-y-auto p-12 max-w-4xl mx-auto w-full space-y-12">
               <section>
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
                   <Globe className="text-blue-500" size={24} />
-                  Endpoint Specification
+                  CPU Endpoint Spec
                 </h2>
                 <div className="space-y-6">
                   <EndpointCard 
                     method="POST" 
                     path="/generate" 
-                    description="Trigger LLM inference with prompt and generation parameters."
+                    description="Inference using GGUF 4-bit quantization. Cold boot optimized for CPU."
                     body={{
                       prompt: "string",
-                      max_new_tokens: "int (default: 256)"
+                      max_new_tokens: "int"
                     }}
                     response={{
                       text: "string"
-                    }}
-                  />
-                  <EndpointCard 
-                    method="GET" 
-                    path="/health" 
-                    description="System health check. Returns status: ok if model is loaded and GPU is accessible."
-                    response={{
-                      status: "ok"
                     }}
                   />
                 </div>
               </section>
 
               <section>
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
                   <Terminal className="text-emerald-500" size={24} />
-                  Test Execution (cURL)
+                  Quick Test
                 </h2>
                 <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-lg">
                   <pre className="text-xs text-blue-400 leading-6">
                     {`curl -X POST "http://localhost:8000/generate" \\
      -H "Content-Type: application/json" \\
-     -d '{"prompt": "What is the capital of France?", "max_new_tokens": 128}'`}
+     -d '{"prompt": "Why use CPU for LLMs?", "max_new_tokens": 100}'`}
                   </pre>
                 </div>
               </section>
@@ -199,16 +193,16 @@ const App: React.FC = () => {
           {activeView === 'deploy' && (
             <div className="flex-1 overflow-y-auto p-12 max-w-4xl mx-auto w-full space-y-12">
               <section>
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
-                  <Box className="text-orange-500" size={24} />
-                  Infrastructure Layout
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
+                  <ZapOff className="text-orange-500" size={24} />
+                  CPU-Only Optimization
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { icon: Cpu, label: "GPU Runtime", desc: "NVIDIA CUDA 12.1.1-CUDNN8" },
-                    { icon: Database, label: "Memory Strategy", desc: "torch.float16 (Auto Device Map)" },
-                    { icon: Lock, label: "Isolation", desc: "Dockerized Ubuntu 22.04 Container" },
-                    { icon: Server, label: "Web Layer", desc: "FastAPI + Uvicorn (ASGI)" }
+                    { icon: Cpu, label: "SIMD Acceleration", desc: "Uses AVX/AVX2 instructions via llama.cpp" },
+                    { icon: Database, label: "GGUF Q4_K_M", desc: "4-bit quantization for 3x less RAM usage" },
+                    { icon: Lock, label: "No CUDA", desc: "Native C++ compilation (libllama.so)" },
+                    { icon: Activity, label: "Multi-threading", desc: "Auto-detection of physical CPU cores" }
                   ].map((item, i) => (
                     <div key={i} className="p-4 border border-[#222] bg-[#0a0a0a] rounded flex items-start gap-4">
                       <div className="p-2 rounded bg-[#111] border border-[#222]">
@@ -224,36 +218,28 @@ const App: React.FC = () => {
               </section>
 
               <section>
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
                   <CornerDownRight className="text-purple-500" size={24} />
-                  Standard Operating Procedures
+                  Build Commands
                 </h2>
                 <div className="space-y-4">
-                  <Step title="Build Container" cmd="docker build -t qwen-inference-server ." />
-                  <Step title="Initialize Inference" cmd="docker run --gpus all -p 8000:8000 qwen-inference-server" />
-                  <Step title="Verify Deployment" cmd="curl http://localhost:8000/health" />
+                  <Step title="Native Build" cmd="docker build -t qwen-cpu-native ." />
+                  <Step title="Launch (No GPU required)" cmd="docker run -p 8000:8000 qwen-cpu-native" />
                 </div>
               </section>
-
-              <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded flex items-center justify-between">
-                <div className="text-xs text-blue-400 font-bold uppercase tracking-widest">
-                  Deployment Optimized for: Render GPU Clusters
-                </div>
-                <ExternalLink size={14} className="text-blue-400" />
-              </div>
             </div>
           )}
         </main>
       </div>
 
-      {/* Footer / Info */}
+      {/* Footer */}
       <footer className="h-10 border-t border-[#222] bg-[#0a0a0a] flex items-center justify-between px-6 text-[10px] font-bold text-[#444] uppercase tracking-tighter">
         <div className="flex gap-6">
-          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Model: Qwen-1.8B</span>
-          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/> Engine: PyTorch</span>
+          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Stack: Llama.cpp + FastAPI</span>
+          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/> Format: GGUF</span>
         </div>
-        <div className="text-emerald-500/50">
-          Inference Node 01 // [Latency: 42ms]
+        <div className="text-blue-500/50">
+          NODE: CPU_INSTANCE_01 // OPTIMIZED
         </div>
       </footer>
     </div>
@@ -269,7 +255,7 @@ const FileTree: React.FC<{ node: FileNode; selectedPath: string; onSelect: (path
       <div className="w-full">
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#111] text-[#777] transition-colors text-xs font-bold uppercase tracking-tighter"
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#111] text-[#777] transition-colors text-[11px] font-bold uppercase tracking-tighter"
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
         >
           <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
@@ -289,7 +275,7 @@ const FileTree: React.FC<{ node: FileNode; selectedPath: string; onSelect: (path
   return (
     <button 
       onClick={() => onSelect(node.path)}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-xs ${isSelected ? 'text-blue-400 bg-blue-400/5' : 'text-[#555] hover:text-[#888]'}`}
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-[11px] ${isSelected ? 'text-blue-400 bg-blue-400/5' : 'text-[#555] hover:text-[#888]'}`}
       style={{ paddingLeft: `${depth * 12 + 20}px` }}
     >
       {node.name}
@@ -299,36 +285,30 @@ const FileTree: React.FC<{ node: FileNode; selectedPath: string; onSelect: (path
 
 const EndpointCard: React.FC<{ method: string; path: string; description: string; body?: any; response?: any }> = ({ method, path, description, body, response }) => (
   <div className="border border-[#222] bg-[#0a0a0a] rounded-lg overflow-hidden">
-    <div className="flex items-center gap-4 px-4 py-3 border-b border-[#222]">
-      <span className={`text-[10px] font-black px-2 py-0.5 rounded ${method === 'POST' ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white'}`}>
+    <div className="flex items-center gap-4 px-4 py-3 border-b border-[#222] bg-[#0d0d0d]">
+      <span className={`text-[10px] font-black px-2 py-0.5 rounded ${method === 'POST' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>
         {method}
       </span>
-      <span className="text-sm font-bold text-white">{path}</span>
+      <span className="text-sm font-bold text-white tracking-tight">{path}</span>
     </div>
     <div className="p-4 space-y-4">
-      <p className="text-xs text-[#666]">{description}</p>
+      <p className="text-xs text-[#777] leading-relaxed">{description}</p>
       {body && (
-        <div>
-          <div className="text-[10px] font-bold text-[#444] mb-2 uppercase">Request Body</div>
-          <pre className="p-3 bg-black rounded text-[11px] text-[#888]">{JSON.stringify(body, null, 2)}</pre>
-        </div>
+        <pre className="p-3 bg-black rounded text-[11px] text-blue-400/80 border border-[#1a1a1a]">{JSON.stringify(body, null, 2)}</pre>
       )}
       {response && (
-        <div>
-          <div className="text-[10px] font-bold text-[#444] mb-2 uppercase">Success Response (200 OK)</div>
-          <pre className="p-3 bg-black rounded text-[11px] text-[#888]">{JSON.stringify(response, null, 2)}</pre>
-        </div>
+        <pre className="p-3 bg-black rounded text-[11px] text-emerald-400/80 border border-[#1a1a1a]">{JSON.stringify(response, null, 2)}</pre>
       )}
     </div>
   </div>
 );
 
 const Step: React.FC<{ title: string; cmd: string }> = ({ title, cmd }) => (
-  <div className="p-4 border border-[#222] rounded bg-[#0a0a0a] group">
+  <div className="p-4 border border-[#222] rounded bg-[#0a0a0a] group hover:border-[#333] transition-colors">
     <div className="text-[10px] font-bold text-[#444] mb-2 uppercase tracking-tight">{title}</div>
     <div className="flex items-center justify-between">
-      <code className="text-xs text-emerald-500">$ {cmd}</code>
-      <button onClick={() => navigator.clipboard.writeText(cmd)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <code className="text-xs text-emerald-500 font-mono tracking-tighter">$ {cmd}</code>
+      <button onClick={() => navigator.clipboard.writeText(cmd)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-[#1a1a1a] rounded">
         <Copy size={12} className="text-[#555]" />
       </button>
     </div>

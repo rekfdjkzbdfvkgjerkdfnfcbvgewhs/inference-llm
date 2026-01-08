@@ -4,15 +4,16 @@ export const QWEN_FILES = {
 from app.model import load_model, generate
 from app.schemas import GenerateRequest, GenerateResponse
 
-app = FastAPI(title="Qwen Inference API")
+app = FastAPI(title="Qwen CPU Inference API")
 
 @app.on_event("startup")
 def startup():
+    # Model is initialized on boot
     load_model()
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "engine": "llama.cpp"}
 
 @app.post("/generate", response_model=GenerateResponse)
 def generate_text(req: GenerateRequest):
@@ -22,48 +23,51 @@ def generate_text(req: GenerateRequest):
     )
     return {"text": text}`,
 
-  model_py: `import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+  model_py: `import os
+from llama_cpp import Llama
+from huggingface_hub import hf_hub_download
 
-MODEL_ID = "Qwen/Qwen1.5-1.8B-Chat"
+# Qwen-1.5-1.8B Quantized (GGUF)
+MODEL_REPO = "Qwen/Qwen1.5-1.8B-Chat-GGUF"
+MODEL_FILE = "qwen1_5-1_8b-chat-q4_k_m.gguf"
 
-tokenizer = None
-model = None
+llm = None
 
 def load_model():
-    global tokenizer, model
-
-    if model is not None:
+    global llm
+    
+    if llm is not None:
         return
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        MODEL_ID,
-        trust_remote_code=True
+    # Download GGUF model from Hub
+    model_path = hf_hub_download(
+        repo_id=MODEL_REPO,
+        filename=MODEL_FILE
     )
 
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        torch_dtype=torch.float16,
-        device_map="auto",
-        trust_remote_code=True
+    # Initialize C++ backend
+    llm = Llama(
+        model_path=model_path,
+        n_ctx=2048,           # Context window
+        n_threads=os.cpu_count() or 4, # Maximize CPU usage
+        n_gpu_layers=0,       # Force CPU-only
+        verbose=False
     )
 
-    model.eval()
-
-
-@torch.inference_mode()
 def generate(prompt: str, max_new_tokens: int = 256):
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-
-    output = model.generate(
-        **inputs,
-        max_new_tokens=max_new_tokens,
-        do_sample=True,
+    # Formatted for Qwen Chat template
+    formatted_prompt = f"<|im_start|>user\\n{prompt}<|im_end|>\\n<|im_start|>assistant\\n"
+    
+    response = llm(
+        formatted_prompt,
+        max_tokens=max_new_tokens,
+        stop=["<|im_end|>", "<|endoftext|>"],
+        echo=False,
         temperature=0.7,
         top_p=0.9
     )
-
-    return tokenizer.decode(output[0], skip_special_tokens=True)`,
+    
+    return response["choices"][0]["text"].strip()`,
 
   schemas_py: `from pydantic import BaseModel
 
@@ -76,28 +80,27 @@ class GenerateResponse(BaseModel):
 
   requirements_txt: `fastapi
 uvicorn[standard]
-torch
-transformers
-accelerate
-sentencepiece
+llama-cpp-python
+huggingface_hub
 pydantic`,
 
-  dockerfile: `FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+  dockerfile: `FROM python:3.11-slim-bookworm
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Build-time dependencies for C++ extensions
 RUN apt-get update && apt-get install -y \\
-    python3 \\
-    python3-pip \\
-    git \\
+    build-essential \\
+    python3-dev \\
+    cmake \\
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Set environment to avoid PyTorch/CUDA bloat
+ENV PIP_NO_CACHE_DIR=1
+ENV PYTHONUNBUFFERED=1
+
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
@@ -105,21 +108,34 @@ EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`,
 
+  render_yaml: `services:
+  - type: web
+    name: qwen-cpu-api
+    runtime: docker
+    plan: pro
+    region: oregon
+    envVars:
+      - key: MODEL_ID
+        value: Qwen/Qwen1.5-1.8B-Chat-GGUF`,
+
   dockerignore: `__pycache__/
 .git
-.env`,
+.env
+*.gguf`,
 
-  readme_md: `# Qwen Inference Server
+  readme_md: `# Qwen CPU Inference Server
 
-A high-performance FastAPI wrapper for the Qwen 1.5-1.8B-Chat model, optimized for GPU deployment.
+High-density C++ inference using llama-cpp-python.
 
-## Features
-- **FastAPI Core**: Low latency, high throughput.
-- **GPU Optimized**: Uses NVIDIA CUDA 12.1.1 base image.
-- **Efficient Inference**: Implements \`device_map="auto"\` and \`torch.float16\`.
-- **Hot-loading**: Model stays in VRAM after first startup.
+## Specs
+- **Engine**: llama.cpp (C++ core)
+- **Quantization**: 4-bit (Q4_K_M)
+- **RAM Target**: ~2.5GB
+- **Backend**: FastAPI / Uvicorn
 
-## Deployment
-1. Build: \`docker build -t qwen-server .\`
-2. Run: \`docker run --gpus all -p 8000:8000 qwen-server\``
+## Usage
+\`\`\`bash
+docker build -t qwen-cpu .
+docker run -p 8000:8000 qwen-cpu
+\`\`\``
 };
