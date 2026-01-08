@@ -1,28 +1,28 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  Server, 
-  Code2, 
-  Rocket, 
-  Cpu, 
-  ChevronRight, 
-  Folder, 
-  FileJson, 
   Terminal, 
-  Zap, 
-  Activity,
-  MessageSquare,
-  Copy,
-  Check
+  FileCode, 
+  Server, 
+  Activity, 
+  ChevronRight, 
+  Copy, 
+  Check, 
+  Cpu, 
+  Database,
+  Globe,
+  Lock,
+  Box,
+  CornerDownRight,
+  ExternalLink
 } from 'lucide-react';
 import { QWEN_FILES } from './constants';
-import { FileNode, TabType } from './types';
-import Assistant from './components/Assistant';
+import { FileNode } from './types';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>(TabType.ARCHITECTURE);
   const [selectedFile, setSelectedFile] = useState<string>('app/main.py');
   const [copied, setCopied] = useState(false);
+  const [activeView, setActiveView] = useState<'files' | 'api' | 'deploy'>('files');
 
   const fileTree: FileNode = useMemo(() => ({
     name: 'qwen-inference-server',
@@ -66,172 +66,201 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden">
-      {/* Header */}
-      <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Server size={24} className="text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg tracking-tight">Qwen Inference Server</h1>
-            <p className="text-xs text-slate-400 font-medium">FASTAPI • TRANSFORMERS • CUDA 12.1</p>
-          </div>
-        </div>
-        
-        <nav className="flex gap-2">
-          <button 
-            onClick={() => setActiveTab(TabType.ARCHITECTURE)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === TabType.ARCHITECTURE ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
-          >
-            <Code2 size={18} />
-            Architecture
-          </button>
-          <button 
-            onClick={() => setActiveTab(TabType.DEPLOYMENT)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === TabType.DEPLOYMENT ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
-          >
-            <Rocket size={18} />
-            Deployment
-          </button>
-          <button 
-            onClick={() => setActiveTab(TabType.ASSISTANT)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === TabType.ASSISTANT ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
-          >
-            <MessageSquare size={18} />
-            AI Assistant
-          </button>
-        </nav>
-
+    <div className="flex flex-col h-screen bg-[#050505] text-[#d1d1d1] font-mono antialiased overflow-hidden">
+      {/* Top Status Bar */}
+      <div className="h-10 border-b border-[#222] bg-[#0a0a0a] flex items-center justify-between px-4 text-[11px] uppercase tracking-widest font-bold">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+          <div className="flex items-center gap-2 text-emerald-500">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            System: Operational
+          </div>
+          <div className="flex items-center gap-2 text-blue-400">
             <Activity size={12} />
-            GPU Ready
+            Inference: Ready
           </div>
         </div>
-      </header>
+        <div className="flex items-center gap-4 text-[#555]">
+          <span>Qwen-1.5-1.8B-Chat</span>
+          <span>CUDA 12.1.1</span>
+        </div>
+      </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex overflow-hidden">
-        {activeTab === TabType.ARCHITECTURE && (
-          <div className="flex-1 flex overflow-hidden">
-            {/* Sidebar File Tree */}
-            <aside className="w-64 border-r border-slate-800 bg-slate-900/30 overflow-y-auto">
-              <div className="p-4 uppercase text-[10px] font-bold text-slate-500 tracking-widest">Repository</div>
-              <div className="px-2">
-                <FileTree node={fileTree} selectedPath={selectedFile} onSelect={setSelectedFile} />
-              </div>
-            </aside>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Navigation Sidebar */}
+        <aside className="w-64 border-r border-[#222] bg-[#0a0a0a] flex flex-col">
+          <div className="p-4 border-b border-[#222]">
+            <div className="text-[10px] text-[#555] mb-2 font-bold uppercase tracking-tighter">Navigation</div>
+            <nav className="space-y-1">
+              {[
+                { id: 'files', icon: FileCode, label: 'Source Explorer' },
+                { id: 'api', icon: Globe, label: 'API Reference' },
+                { id: 'deploy', icon: Box, label: 'Infrastructure' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveView(item.id as any)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded text-xs transition-colors ${activeView === item.id ? 'bg-[#1a1a1a] text-white' : 'text-[#666] hover:text-[#999]'}`}
+                >
+                  <item.icon size={14} />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
 
-            {/* Code Viewer */}
-            <section className="flex-1 flex flex-col bg-[#0d1117] overflow-hidden">
-              <div className="h-10 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/40">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-                  <FileJson size={14} />
-                  {selectedFile}
+          <div className="flex-1 overflow-y-auto p-2">
+            <div className="text-[10px] text-[#555] px-2 mb-2 font-bold uppercase tracking-tighter">Workspace</div>
+            <FileTree node={fileTree} selectedPath={selectedFile} onSelect={setSelectedFile} />
+          </div>
+
+          <div className="p-4 bg-[#0d0d0d] border-t border-[#222] space-y-3">
+            <div className="flex justify-between items-center text-[10px] text-[#444]">
+              <span>VRAM USAGE</span>
+              <span>3.8GB / 8.0GB</span>
+            </div>
+            <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+              <div className="h-full bg-blue-500 w-[48%]" />
+            </div>
+          </div>
+        </aside>
+
+        {/* Content Area */}
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#050505]">
+          {activeView === 'files' && (
+            <>
+              <div className="h-10 border-b border-[#222] flex items-center justify-between px-4 bg-[#0a0a0a]">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#888]">
+                  <Terminal size={14} className="text-emerald-500" />
+                  root@{selectedFile}
                 </div>
                 <button 
                   onClick={handleCopy}
-                  className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                  className="flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase rounded border border-[#333] hover:bg-[#111] transition-colors"
                 >
-                  {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                  {copied ? 'Copied' : 'Copy Content'}
                 </button>
               </div>
-              <div className="flex-1 overflow-auto p-6 code-font text-sm leading-relaxed">
-                <pre className="text-blue-300">
+              <div className="flex-1 overflow-auto p-8 selection:bg-blue-500/30">
+                <pre className="text-sm leading-relaxed text-[#bbb]">
                   {currentContent}
                 </pre>
               </div>
-            </section>
-          </div>
-        )}
+            </>
+          )}
 
-        {activeTab === TabType.DEPLOYMENT && (
-          <div className="flex-1 overflow-y-auto p-12 bg-slate-950">
-            <div className="max-w-4xl mx-auto space-y-12">
+          {activeView === 'api' && (
+            <div className="flex-1 overflow-y-auto p-12 max-w-4xl mx-auto w-full space-y-12">
               <section>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
-                    <Rocket size={24} />
-                  </div>
-                  <h2 className="text-2xl font-bold">Deploy to Production</h2>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors group">
-                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
-                      <Zap size={18} className="text-yellow-400" />
-                      Render GPU
-                    </h3>
-                    <p className="text-sm text-slate-400 mb-4">Optimized for Render's GPU instances using the provided Dockerfile.</p>
-                    <ul className="text-xs space-y-2 text-slate-500">
-                      <li>• Docker environment: Ubuntu 22.04</li>
-                      <li>• Runtime: Python 3.10+</li>
-                      <li>• Base Image: NVIDIA CUDA 12.1</li>
-                    </ul>
-                  </div>
-                  <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors group">
-                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
-                      <Cpu size={18} className="text-blue-400" />
-                      Self Hosted
-                    </h3>
-                    <p className="text-sm text-slate-400 mb-4">Run locally with NVIDIA Container Toolkit for maximum performance.</p>
-                    <div className="p-3 bg-black rounded-lg code-font text-[10px] text-emerald-400 border border-emerald-900/30">
-                      docker run --gpus all -p 8000:8000 qwen-server
-                    </div>
-                  </div>
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                  <Globe className="text-blue-500" size={24} />
+                  Endpoint Specification
+                </h2>
+                <div className="space-y-6">
+                  <EndpointCard 
+                    method="POST" 
+                    path="/generate" 
+                    description="Trigger LLM inference with prompt and generation parameters."
+                    body={{
+                      prompt: "string",
+                      max_new_tokens: "int (default: 256)"
+                    }}
+                    response={{
+                      text: "string"
+                    }}
+                  />
+                  <EndpointCard 
+                    method="GET" 
+                    path="/health" 
+                    description="System health check. Returns status: ok if model is loaded and GPU is accessible."
+                    response={{
+                      status: "ok"
+                    }}
+                  />
                 </div>
               </section>
 
-              <section className="space-y-6">
-                <h3 className="text-xl font-semibold">Deployment Checklist</h3>
-                <div className="space-y-4">
+              <section>
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                  <Terminal className="text-emerald-500" size={24} />
+                  Test Execution (cURL)
+                </h2>
+                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-lg">
+                  <pre className="text-xs text-blue-400 leading-6">
+                    {`curl -X POST "http://localhost:8000/generate" \\
+     -H "Content-Type: application/json" \\
+     -d '{"prompt": "What is the capital of France?", "max_new_tokens": 128}'`}
+                  </pre>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {activeView === 'deploy' && (
+            <div className="flex-1 overflow-y-auto p-12 max-w-4xl mx-auto w-full space-y-12">
+              <section>
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                  <Box className="text-orange-500" size={24} />
+                  Infrastructure Layout
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { title: "GPU Availability", desc: "Ensure NVIDIA drivers and CUDA toolkit are installed on host." },
-                    { title: "VRAM Capacity", desc: "Qwen 1.5-1.8B requires approx 4GB VRAM in FP16 mode." },
-                    { title: "Network Access", desc: "Port 8000 must be exposed and accessible from client apps." },
+                    { icon: Cpu, label: "GPU Runtime", desc: "NVIDIA CUDA 12.1.1-CUDNN8" },
+                    { icon: Database, label: "Memory Strategy", desc: "torch.float16 (Auto Device Map)" },
+                    { icon: Lock, label: "Isolation", desc: "Dockerized Ubuntu 22.04 Container" },
+                    { icon: Server, label: "Web Layer", desc: "FastAPI + Uvicorn (ASGI)" }
                   ].map((item, i) => (
-                    <div key={i} className="flex gap-4 items-start p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-                      <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold mt-0.5">{i+1}</div>
+                    <div key={i} className="p-4 border border-[#222] bg-[#0a0a0a] rounded flex items-start gap-4">
+                      <div className="p-2 rounded bg-[#111] border border-[#222]">
+                        <item.icon size={18} className="text-[#666]" />
+                      </div>
                       <div>
-                        <h4 className="font-bold text-sm">{item.title}</h4>
-                        <p className="text-xs text-slate-400">{item.desc}</p>
+                        <div className="text-xs font-bold text-white mb-1 uppercase tracking-tight">{item.label}</div>
+                        <div className="text-xs text-[#555]">{item.desc}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
+
+              <section>
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                  <CornerDownRight className="text-purple-500" size={24} />
+                  Standard Operating Procedures
+                </h2>
+                <div className="space-y-4">
+                  <Step title="Build Container" cmd="docker build -t qwen-inference-server ." />
+                  <Step title="Initialize Inference" cmd="docker run --gpus all -p 8000:8000 qwen-inference-server" />
+                  <Step title="Verify Deployment" cmd="curl http://localhost:8000/health" />
+                </div>
+              </section>
+
+              <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded flex items-center justify-between">
+                <div className="text-xs text-blue-400 font-bold uppercase tracking-widest">
+                  Deployment Optimized for: Render GPU Clusters
+                </div>
+                <ExternalLink size={14} className="text-blue-400" />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </main>
+      </div>
 
-        {activeTab === TabType.ASSISTANT && (
-          <div className="flex-1 flex overflow-hidden">
-             <Assistant />
-          </div>
-        )}
-      </main>
-
-      {/* Footer / Status Bar */}
-      <footer className="h-8 border-t border-slate-800 bg-slate-900 px-4 flex items-center justify-between text-[10px] font-medium text-slate-500 uppercase tracking-tighter">
-        <div className="flex gap-4">
-          <span className="flex items-center gap-1"><Terminal size={10}/> CLI: Ready</span>
-          <span className="flex items-center gap-1 text-emerald-500"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/> Server: Hot</span>
+      {/* Footer / Info */}
+      <footer className="h-10 border-t border-[#222] bg-[#0a0a0a] flex items-center justify-between px-6 text-[10px] font-bold text-[#444] uppercase tracking-tighter">
+        <div className="flex gap-6">
+          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Model: Qwen-1.8B</span>
+          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/> Engine: PyTorch</span>
         </div>
-        <div>Model ID: Qwen/Qwen1.5-1.8B-Chat</div>
+        <div className="text-emerald-500/50">
+          Inference Node 01 // [Latency: 42ms]
+        </div>
       </footer>
     </div>
   );
 };
 
-interface FileTreeProps {
-  node: FileNode;
-  selectedPath: string;
-  onSelect: (path: string) => void;
-  depth?: number;
-}
-
-const FileTree: React.FC<FileTreeProps> = ({ node, selectedPath, onSelect, depth = 0 }) => {
+const FileTree: React.FC<{ node: FileNode; selectedPath: string; onSelect: (path: string) => void; depth?: number }> = ({ node, selectedPath, onSelect, depth = 0 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const isSelected = selectedPath === node.path;
 
@@ -240,12 +269,11 @@ const FileTree: React.FC<FileTreeProps> = ({ node, selectedPath, onSelect, depth
       <div className="w-full">
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-800/50 text-slate-300 transition-colors text-sm font-medium"
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#111] text-[#777] transition-colors text-xs font-bold uppercase tracking-tighter"
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
         >
-          <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
-          <Folder size={14} className="text-blue-400" />
-          {node.name}
+          <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+          {node.name}/
         </button>
         {isOpen && node.children && (
           <div className="mt-0.5">
@@ -261,13 +289,50 @@ const FileTree: React.FC<FileTreeProps> = ({ node, selectedPath, onSelect, depth
   return (
     <button 
       onClick={() => onSelect(node.path)}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-sm ${isSelected ? 'bg-blue-600/20 text-blue-400 font-medium' : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}
-      style={{ paddingLeft: `${depth * 12 + 22}px` }}
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-xs ${isSelected ? 'text-blue-400 bg-blue-400/5' : 'text-[#555] hover:text-[#888]'}`}
+      style={{ paddingLeft: `${depth * 12 + 20}px` }}
     >
-      <FileJson size={14} className={isSelected ? 'text-blue-400' : 'text-slate-500'} />
       {node.name}
     </button>
   );
 };
+
+const EndpointCard: React.FC<{ method: string; path: string; description: string; body?: any; response?: any }> = ({ method, path, description, body, response }) => (
+  <div className="border border-[#222] bg-[#0a0a0a] rounded-lg overflow-hidden">
+    <div className="flex items-center gap-4 px-4 py-3 border-b border-[#222]">
+      <span className={`text-[10px] font-black px-2 py-0.5 rounded ${method === 'POST' ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white'}`}>
+        {method}
+      </span>
+      <span className="text-sm font-bold text-white">{path}</span>
+    </div>
+    <div className="p-4 space-y-4">
+      <p className="text-xs text-[#666]">{description}</p>
+      {body && (
+        <div>
+          <div className="text-[10px] font-bold text-[#444] mb-2 uppercase">Request Body</div>
+          <pre className="p-3 bg-black rounded text-[11px] text-[#888]">{JSON.stringify(body, null, 2)}</pre>
+        </div>
+      )}
+      {response && (
+        <div>
+          <div className="text-[10px] font-bold text-[#444] mb-2 uppercase">Success Response (200 OK)</div>
+          <pre className="p-3 bg-black rounded text-[11px] text-[#888]">{JSON.stringify(response, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const Step: React.FC<{ title: string; cmd: string }> = ({ title, cmd }) => (
+  <div className="p-4 border border-[#222] rounded bg-[#0a0a0a] group">
+    <div className="text-[10px] font-bold text-[#444] mb-2 uppercase tracking-tight">{title}</div>
+    <div className="flex items-center justify-between">
+      <code className="text-xs text-emerald-500">$ {cmd}</code>
+      <button onClick={() => navigator.clipboard.writeText(cmd)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <Copy size={12} className="text-[#555]" />
+      </button>
+    </div>
+  </div>
+);
 
 export default App;
