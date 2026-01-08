@@ -6,14 +6,3 @@ export interface FileNode {
   content?: string;
   children?: FileNode[];
 }
-
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-
-export enum TabType {
-  ARCHITECTURE = 'architecture',
-  DEPLOYMENT = 'deployment',
-  ASSISTANT = 'assistant'
-}
